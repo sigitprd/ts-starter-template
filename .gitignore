@@ -1,0 +1,45 @@
+# Node.js
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm/
+.yarn/
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store # macOS specific
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# Logs
+logs/
+*.log
+
+# Databases (jika ada file database lokal, misal sqlite)
+*.sqlite
+*.sqlite-journal
+
+# Compiled TypeScript files (sudah dicover oleh /dist tapi kadang ada yang terpisah)
+*.js
+!*.js.map # Keep source maps for debugging if needed in dev environment
+*.d.ts
+
+# Test/Coverage reports
+coverage/
+.nyc_output/
+
+# OS generated files
+.Trash/
+Thumbs.db # Windows

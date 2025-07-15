@@ -1,0 +1,120 @@
+#name: Deploy STAGING Node.js via SSH (with PM2)
+#
+## Workflow ini akan dijalankan saat ada event push atau pull_request
+#on:
+#  push:
+#    branches:
+#      - staging # <<<--- SESUAIKAN: Nama branch staging Anda
+##  pull_request:
+##    branches:
+##      - staging # <<<--- SESUAIKAN: Nama branch staging Anda
+#
+## Sebuah workflow terdiri dari satu atau lebih job
+#jobs:
+#  deploy:
+#    # Job ini akan berjalan di runner Ubuntu terbaru yang disediakan GitHub
+#    runs-on: ubuntu-latest
+#
+#    # Langkah-langkah (steps) yang akan dijalankan di dalam job
+#    steps:
+#      # Langkah 1: Validasi GitHub Secrets
+#      # Memastikan bahwa semua environment variable (secrets) yang diperlukan
+#      # sudah diatur di pengaturan repositori GitHub Anda.
+#      - name: Validasi GitHub Secrets
+#        run: |
+#          echo "🔍 Validasi secrets..."
+#          REQUIRED_SECRETS=("VPS_HOST" "VPS_USER" "VPS_SSH_KEY" "VPS_PORT")
+#          for secret in "${REQUIRED_SECRETS[@]}"; do
+#            if [ -z "${!secret}" ]; then
+#              echo "❌ ERROR: Secret $secret belum tersedia di GitHub Settings! Workflow dihentikan."
+#              exit 1
+#            fi
+#          done
+#        env: # secrets akan di-expose sebagai environment variable di langkah ini
+#          VPS_HOST: ${{ secrets.VPS_HOST }}
+#          VPS_USER: ${{ secrets.VPS_USER }}
+#          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+#          VPS_PORT: ${{ secrets.VPS_PORT }}
+#
+#      # Langkah 2: Deploy Aplikasi via SSH
+#      # Menggunakan action 'appleboy/ssh-action' untuk menjalankan perintah SSH di server Anda.
+#      - name: Deploy Aplikasi via SSH
+#        uses: appleboy/ssh-action@v1.0.0
+#        with:
+#          host: ${{ secrets.VPS_HOST }}
+#          username: ${{ secrets.VPS_USER }}
+#          key: ${{ secrets.VPS_SSH_KEY }}
+#          port: ${{ secrets.VPS_PORT }}
+#          script: |
+#            # Menghentikan eksekusi script jika ada perintah yang gagal
+#            set -e
+#
+#            # --- Konfigurasi Server Anda (WAJIB SESUAIKAN INI!) ---
+#            # Path absolut ke direktori aplikasi Anda di server
+#            APP_DIR="/var/www/your_express_app_staging" # <<<--- SESUAIKAN
+#            # Nama unik untuk aplikasi di PM2 (contoh: my-app-staging)
+#            APP_NAME="your_app_staging" # <<<--- SESUAIKAN
+#            # Versi Node.js yang ingin Anda gunakan di NVM (misal: '20', '18', 'lts')
+#            NVM_VERSION="20" # <<<--- SESUAIKAN
+#            # Perintah untuk memulai aplikasi Anda (sesuai dengan script 'start' di package.json)
+#            APP_START_COMMAND="npm run start" # <<<--- SESUAIKAN (misal: 'node dist/server.js')
+#            # ------------------------------------------------
+#
+#            # --- Inisialisasi NVM ---
+#            # Ini sangat penting agar perintah 'nvm' bisa dieksekusi di sesi SSH.
+#            export NVM_DIR="$HOME/.nvm"
+#            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+#            [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+#
+#            echo "📦 [1/6] Memastikan direktori aplikasi ada..."
+#            if [ ! -d "$APP_DIR" ]; then
+#              echo "📂 Direktori aplikasi tidak ditemukan, melakukan cloning awal..."
+#              # Ganti URL repositori GitHub Anda di sini!
+#              git clone https://github.com/your_github_username/your_repo_name.git "$APP_DIR" # <<<--- SESUAIKAN
+#            fi
+#
+#            # Masuk ke direktori aplikasi
+#            cd "$APP_DIR"
+#
+#            echo "🚀 [2/6] Memuat NVM dan menginstal/menggunakan Node.js version $NVM_VERSION..."
+#            nvm install "$NVM_VERSION"
+#            nvm use "$NVM_VERSION"
+#
+#            echo "⬇️ [3/6] Menarik perubahan terbaru dari branch staging..."
+#            git config --global --add safe.directory "$APP_DIR"
+#            git pull origin staging
+#
+#            echo "🛠️ [4/6] Menginstal atau memperbarui dependensi NPM..."
+#            npm install --production
+#
+#            echo "🏗️ [5/6] Membangun proyek TypeScript..."
+#            npm run build
+#
+#            echo "🔄 [6/6] Melakukan Deploy dengan PM2..."
+#            # Hentikan aplikasi jika sudah ada (untuk memastikan clean restart)
+#            echo "🛑 Menghentikan aplikasi ${APP_NAME} jika sedang berjalan..."
+#            pm2 stop ${APP_NAME} || true # '|| true' agar script tidak error jika aplikasi belum ada
+#
+#            # Hapus aplikasi dari daftar PM2 jika ada (untuk start bersih)
+#            echo "🗑️ Menghapus aplikasi ${APP_NAME} dari daftar PM2 jika ada..."
+#            pm2 delete ${APP_NAME} || true
+#
+#            # Jalankan aplikasi dengan PM2
+#            echo "🚀 Memulai aplikasi ${APP_NAME} dengan PM2..."
+#            pm2 start "$APP_START_COMMAND" --name "$APP_NAME" --log-date-format "YYYY-MM-DD HH:mm:ss"
+#
+#            # Simpan konfigurasi PM2 agar aplikasi otomatis restart setelah reboot server
+#            echo "💾 Menyimpan konfigurasi PM2..."
+#            pm2 save
+#
+#            echo "🔍 Verifikasi service PM2 berjalan..."
+#            sleep 5 # Beri waktu aplikasi untuk memulai
+#            # Periksa status PM2 untuk memastikan aplikasi online
+#            if ! pm2 status | grep -q "${APP_NAME}.*online"; then
+#              echo "❌ Aplikasi ${APP_NAME} gagal berjalan dengan PM2."
+#              # Rollback sederhana: Dalam konteks ini, PM2 akan mencoba me-restart jika crash.
+#              # Jika deploy ini gagal memulai, Anda perlu melakukan 'git revert' di branch 'staging' Anda.
+#              exit 1 # Kegagalan deploy akan menyebabkan workflow ini gagal.
+#            fi
+#
+#            echo "✅ Deploy ke STAGING selesai tanpa error."

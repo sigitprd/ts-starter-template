@@ -1,0 +1,51 @@
+#name: CI/CD Pipeline
+#
+## Workflow ini akan dijalankan saat ada event push atau pull_request
+#on:
+#  push:
+#    branches:
+#      - main # Ganti dengan nama branch utama Anda, misal: master, develop
+#  pull_request:
+#    branches:
+#      - main # Ganti dengan nama branch utama Anda
+#
+## Sebuah workflow terdiri dari satu atau lebih job
+#jobs:
+#  build-and-test:
+#    # Job ini akan berjalan di runner Ubuntu terbaru yang disediakan GitHub
+#    runs-on: ubuntu-latest
+#
+#    # Langkah-langkah (steps) yang akan dijalankan di dalam job
+#    steps:
+#      # Langkah 1: Checkout kode dari repositori
+#      - name: Checkout code
+#        uses: actions/checkout@v4 # Menggunakan action resmi GitHub untuk checkout
+#
+#      # Langkah 2: Menyiapkan lingkungan Node.js
+#      - name: Setup Node.js
+#        uses: actions/setup-node@v4 # Menggunakan action resmi GitHub untuk setup Node.js
+#        with:
+#          node-version: '20' # <<<--- SESUAIKAN dengan versi Node.js yang Anda gunakan
+#
+#      # Langkah 3: Menginstal dependensi proyek
+#      # Menggunakan 'npm ci' (clean install) yang direkomendasikan untuk CI/CD
+#      # Ini memastikan instalasi yang bersih dan berdasarkan package-lock.json
+#      - name: Install dependencies
+#        run: npm ci
+#
+#      # Langkah 4: Membangun proyek TypeScript
+#      # Ini akan menjalankan script 'build' yang didefinisikan di package.json Anda (misal: tsc)
+#      - name: Build TypeScript project
+#        run: npm run build
+#
+#      # Langkah 5: Menjalankan unit tests atau integrasi tests
+#      # <<<--- PENTING: Ganti baris di bawah ini dengan perintah tes Anda
+#      # Contoh jika Anda menggunakan Jest: `run: npm test`
+#      # Contoh jika Anda tidak punya tes: biarkan placeholder ini atau hapus langkah ini
+#      - name: Run tests
+#        run: echo "No tests configured yet. Please add 'npm test' or your actual test command here." # Placeholder
+#
+#      # Opsional: Jika Anda ingin menambahkan langkah untuk linting (ESLint)
+#      # Pastikan Anda telah menginstal ESLint dan mengkonfigurasinya di proyek Anda
+#      # - name: Run ESLint
+#      #   run: npm run lint # Pastikan ada script 'lint' di package.json Anda
