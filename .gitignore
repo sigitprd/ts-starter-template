@@ -44,6 +44,7 @@ coverage/
 # OS Generated Files
 # ======================================
 .DS_Store         # macOS
+**/.DS_Store      # macOS
 .Trashes/         # macOS
 .AppleDouble      # macOS
 .LSOverride       # macOS
