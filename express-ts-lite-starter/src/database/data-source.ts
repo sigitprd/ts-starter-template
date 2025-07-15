@@ -17,7 +17,7 @@ export const AppDataSource = new DataSource({
     // Ini akan jadi path yang benar jika Anda memindahkan folder migrations ke src/database/
     migrations: [`${__dirname}/migrations/*.ts`],
     subscribers: [],
-    namingStrategy: new SnakeNamingStrategy(),
+    // namingStrategy: new SnakeNamingStrategy(),
 });
 
 export const initializeDatabase = async () => {

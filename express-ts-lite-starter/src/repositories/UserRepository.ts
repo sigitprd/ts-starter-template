@@ -1,7 +1,7 @@
-import { Repository, IsNull } from 'typeorm';
-import { User } from '../models/User';
-import { AppDataSource } from '../database/data-source';
-import { CustomError } from '../utils/customErrors';
+import {IsNull, Repository} from 'typeorm';
+import {User} from '../models/User';
+import {AppDataSource} from '../database/data-source';
+import {CustomError} from '../utils/customErrors';
 import logger from '../utils/logger';
 
 export class UserRepository {
@@ -29,7 +29,8 @@ export class UserRepository {
                 logger.warn(`repo::getUserById - User not found for ID: ${id}`);
                 // Jika tidak ditemukan, jangan lempar CustomError dengan error asli
                 // karena ini bukan error dari database, melainkan business logic not found.
-                throw new CustomError(404, 'User tidak ditemukan!');
+                // throw new CustomError(404, 'User tidak ditemukan!');
+                return null;
             }
             return user;
         } catch (error: any) { // Tangkap error apapun yang mungkin terjadi di sini
@@ -41,8 +42,7 @@ export class UserRepository {
 
     async findByEmail(email: string): Promise<User | null> {
         try {
-            const user = await this.userRepository.findOne({ where: { email, deletedAt: IsNull() } });
-            return user;
+            return await this.userRepository.findOne({where: {email, deletedAt: IsNull()}});
         } catch (error: any) {
             logger.error(`repo::findByEmail - Failed to find user by email: ${email}`, { error: error.message, stack: error.stack, originalError: error });
             throw new CustomError(500, 'Failed to find user', error);
@@ -51,8 +51,7 @@ export class UserRepository {
 
     async existsByEmail(email: string): Promise<boolean> {
         try {
-            const count = await this.userRepository.count({ where: { email, deletedAt: IsNull() } });
-            return count > 0;
+            return await this.userRepository.exists({where: {email, deletedAt: IsNull()}});
         } catch (error: any) {
             logger.error(`repo::existsByEmail - Failed to check user existence for email: ${email}`, { error: error.message, stack: error.stack, originalError: error });
             throw new CustomError(500, 'Failed to check user existence', error);
